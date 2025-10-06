@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import "./App.css";
 
 // Helper function to render charts
 function renderChart(chart, width = 320, height = 220) {
@@ -82,8 +83,15 @@ export default function App() {
   const [slides, setSlides] = useState([
     {
       id: Date.now(),
-      texts: [],
+      texts: [
+        {
+          id: Date.now() + 1,
+          text: "New Text",
+          style: { bold: false, italic: false, underline: false, fontSize: 16, color: "#000000" },
+        },
+      ],
       chart: null,
+      backgroundColor: "#ffffff",
     },
   ]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -95,6 +103,7 @@ export default function App() {
   const [italic, setItalic] = useState(false);
   const [underline, setUnderline] = useState(false);
   const [fontSize, setFontSize] = useState(16);
+  const [textColor, setTextColor] = useState("#000000");
 
   // Chart form state
   const [chartFormVisible, setChartFormVisible] = useState(false);
@@ -110,7 +119,12 @@ export default function App() {
 
   // Add a new slide
   function addSlide() {
-    const newSlide = { id: Date.now(), texts: [], chart: null };
+    const newText = {
+      id: Date.now(),
+      text: "New Text",
+      style: { bold: false, italic: false, underline: false, fontSize: 16, color: "#000000" },
+    };
+    const newSlide = { id: Date.now(), texts: [newText], chart: null, backgroundColor: "#ffffff" };
     setSlides((prev) => [...prev, newSlide]);
     setCurrentIndex(slides.length);
     setSelectedTextId(null);
@@ -136,7 +150,7 @@ export default function App() {
     const newText = {
       id: Date.now(),
       text: "New Text",
-      style: { bold: false, italic: false, underline: false, fontSize: 16 },
+      style: { bold: false, italic: false, underline: false, fontSize: 16, color: "#000000" },
     };
     const newSlides = [...slides];
     newSlides[currentIndex].texts.push(newText);
@@ -147,6 +161,7 @@ export default function App() {
     setItalic(false);
     setUnderline(false);
     setFontSize(16);
+    setTextColor("#000000");
   }
 
   // Select a text box for editing
@@ -159,6 +174,7 @@ export default function App() {
       setItalic(textObj.style.italic);
       setUnderline(textObj.style.underline);
       setFontSize(textObj.style.fontSize);
+      setTextColor(textObj.style.color || "#000000");
     }
   }
 
@@ -202,6 +218,21 @@ export default function App() {
     setFontSize(size);
     updateTextStyle({ fontSize: size });
   }
+  function updateTextColor(e) {
+    const color = e.target.value;
+    setTextColor(color);
+    updateTextStyle({ color: color });
+  }
+  function updateBackgroundColor(e) {
+    const color = e.target.value;
+    const newSlides = [...slides];
+    if (!newSlides[currentIndex].backgroundColor) {
+      newSlides[currentIndex] = { ...newSlides[currentIndex], backgroundColor: color };
+    } else {
+      newSlides[currentIndex].backgroundColor = color;
+    }
+    setSlides(newSlides);
+  }
 
   function updateTextStyle(newStyle) {
     if (!selectedTextId) return;
@@ -244,9 +275,9 @@ export default function App() {
   }
 
   // Remove chart from slide
-  function removeChart() {
+  function removeChart(slideIndex = currentIndex) {
     const newSlides = [...slides];
-    newSlides[currentIndex].chart = null;
+    newSlides[slideIndex].chart = null;
     setSlides(newSlides);
   }
 
@@ -256,7 +287,7 @@ export default function App() {
       style={{
         width: 800,
         height: 600,
-        background: "white",
+        background: slide.backgroundColor || "white",
         boxShadow: "0 0 15px rgba(0,0,0,0.3)",
         padding: 24,
         borderRadius: 10,
@@ -275,6 +306,7 @@ export default function App() {
               fontStyle: t.style.italic ? "italic" : "normal",
               textDecoration: t.style.underline ? "underline" : "none",
               fontSize: t.style.fontSize,
+              color: t.style.color || "#000000",
               marginBottom: 8,
               whiteSpace: "pre-wrap",
             }}
@@ -295,81 +327,90 @@ export default function App() {
         style={{
           display: "flex",
           height: "100vh",
-          background: "#f5f5f5",
-          fontFamily: "Arial, sans-serif",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         }}
       >
         {/* Sidebar */}
         <div
           style={{
-            width: 180,
-            background: "#fff",
-            borderRight: "1px solid #ddd",
+            width: 220,
+            background: "#2d3748",
+            borderRight: "none",
             overflowY: "auto",
-            padding: 10,
+            padding: 16,
+            boxShadow: "2px 0 10px rgba(0,0,0,0.1)",
           }}
         >
-          <div style={{ marginBottom: 10, fontWeight: "bold" }}>Slides</div>
+          <div style={{ marginBottom: 16, fontWeight: "bold", fontSize: 18, color: "#fff", letterSpacing: "0.5px" }}>📊 Slides</div>
           {slides.map((slide, i) => (
             <div
               key={slide.id}
               onClick={() => selectSlide(i)}
               style={{
-                padding: 8,
-                marginBottom: 8,
+                padding: 10,
+                marginBottom: 12,
                 cursor: "pointer",
-                backgroundColor: i === currentIndex ? "#0078d7" : "#eee",
-                color: i === currentIndex ? "white" : "black",
-                borderRadius: 4,
+                backgroundColor: i === currentIndex ? "#667eea" : "#4a5568",
+                color: "white",
+                borderRadius: 8,
+                transition: "all 0.3s ease",
+                boxShadow: i === currentIndex ? "0 4px 12px rgba(102, 126, 234, 0.4)" : "0 2px 4px rgba(0,0,0,0.2)",
+                transform: i === currentIndex ? "scale(1.02)" : "scale(1)",
               }}
             >
-              <div>Slide {i + 1}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>Slide {i + 1}</div>
               <div
                 style={{
                   marginTop: 6,
-                  background: "white",
-                  border: "1px solid #ccc",
+                  background: slide.backgroundColor || "white",
+                  border: "2px solid rgba(255,255,255,0.1)",
                   height: 120,
                   overflow: "hidden",
-                  borderRadius: 4,
+                  borderRadius: 6,
                   padding: 8,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  boxShadow: "inset 0 1px 3px rgba(0,0,0,0.1)",
                 }}
               >
-                {slide.texts.map((t) => (
-                  <div
-                    key={t.id}
-                    style={{
-                      fontWeight: t.style.bold ? "bold" : "normal",
-                      fontStyle: t.style.italic ? "italic" : "normal",
-                      textDecoration: t.style.underline ? "underline" : "none",
-                      fontSize: t.style.fontSize * 0.6,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {t.text}
-                  </div>
-                ))}
+                <div>
+                  {slide.texts.map((t) => (
+                    <div
+                      key={t.id}
+                      style={{
+                        fontWeight: t.style.bold ? "bold" : "normal",
+                        fontStyle: t.style.italic ? "italic" : "normal",
+                        textDecoration: t.style.underline ? "underline" : "none",
+                        fontSize: t.style.fontSize * 0.6,
+                        color: t.style.color || "#000000",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {t.text}
+                    </div>
+                  ))}
+                </div>
                 {slide.chart && (
-                  <div style={{ marginTop: 8 }}>
-                    {renderChart(slide.chart, 150, 100)}
+                  <div style={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    {renderChart(slide.chart, 150, 80)}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (
-                          window.confirm(
-                            "Remove chart from this slide?"
-                          )
-                        ) {
-                          removeChart();
-                        }
+                        if (window.confirm("Remove chart from this slide?")) removeChart(i);
                       }}
                       style={{
                         marginTop: 4,
                         fontSize: 12,
                         padding: "4px 8px",
                         cursor: "pointer",
+                        background: "#dc3545",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
                       }}
                     >
                       Remove Chart
@@ -381,34 +422,44 @@ export default function App() {
           ))}
           <button
             onClick={addSlide}
+            className="add-slide-btn"
             style={{
               width: "100%",
-              padding: 8,
-              marginTop: 8,
-              background: "#28a745",
+              padding: 12,
+              marginTop: 12,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
               color: "white",
               border: "none",
-              borderRadius: 4,
+              borderRadius: 8,
               cursor: "pointer",
+              fontWeight: 600,
+              fontSize: 14,
+              boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+              transition: "all 0.3s ease",
             }}
           >
-            + Add Slide
+            ✨ Add Slide
           </button>
           <button
             onClick={deleteSlide}
             disabled={slides.length === 1}
             style={{
               width: "100%",
-              padding: 8,
+              padding: 12,
               marginTop: 8,
-              background: slides.length === 1 ? "#ccc" : "#dc3545",
+              background: slides.length === 1 ? "#4a5568" : "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
               color: "white",
               border: "none",
-              borderRadius: 4,
+              borderRadius: 8,
               cursor: slides.length === 1 ? "not-allowed" : "pointer",
+              fontWeight: 600,
+              fontSize: 14,
+              opacity: slides.length === 1 ? 0.5 : 1,
+              boxShadow: slides.length === 1 ? "none" : "0 4px 8px rgba(0,0,0,0.2)",
+              transition: "all 0.3s ease",
             }}
           >
-            Delete Slide
+            🗑️ Delete Slide
           </button>
         </div>
 
@@ -416,26 +467,80 @@ export default function App() {
         <div
           style={{
             flex: 1,
-            padding: 20,
+            padding: 24,
             display: "flex",
             flexDirection: "column",
-            background: "white",
+            background: "#f7fafc",
             position: "relative",
           }}
         >
           {/* Top bar */}
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-            <div>
-              <button onClick={addText} style={{ marginRight: 8 }}>
-                + Add Text
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <button onClick={addText} style={{
+                padding: "10px 16px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 2px 8px rgba(102, 126, 234, 0.3)",
+                transition: "all 0.3s ease",
+              }}>
+                📝 Add Text
               </button>
-              <button onClick={() => openChartForm("pie")} style={{ marginRight: 8 }}>
-                Add Pie Chart
+              <button onClick={() => openChartForm("pie")} style={{
+                padding: "10px 16px",
+                background: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 2px 8px rgba(250, 112, 154, 0.3)",
+                transition: "all 0.3s ease",
+              }}>
+                🥧 Pie Chart
               </button>
-              <button onClick={() => openChartForm("bar")} style={{ marginRight: 8 }}>
-                Add Bar Chart
+              <button onClick={() => openChartForm("bar")} style={{
+                padding: "10px 16px",
+                background: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 2px 8px rgba(48, 207, 208, 0.3)",
+                transition: "all 0.3s ease",
+              }}>
+                📊 Bar Chart
               </button>
-              <button onClick={() => openChartForm("line")}>Add Line Chart</button>
+              <button onClick={() => openChartForm("line")} style={{
+                padding: "10px 16px",
+                background: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+                color: "#333",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 13,
+                boxShadow: "0 2px 8px rgba(168, 237, 234, 0.3)",
+                transition: "all 0.3s ease",
+              }}>📈 Line Chart</button>
+              <label style={{ marginLeft: 8, display: "inline-flex", alignItems: "center", gap: 8, background: "white", padding: "8px 12px", borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)", fontWeight: 600, fontSize: 13 }}>
+                🎨 Background:
+                <input
+                  type="color"
+                  value={currentSlide.backgroundColor || "#ffffff"}
+                  onChange={updateBackgroundColor}
+                  style={{ cursor: "pointer", height: 32, width: 50, border: "2px solid #e2e8f0", borderRadius: 6 }}
+                  title="Slide Background Color"
+                />
+              </label>
             </div>
 
             <button
@@ -444,15 +549,19 @@ export default function App() {
                 setPreviewIndex(currentIndex);
               }}
               style={{
-                padding: "6px 12px",
-                background: "#0078d7",
+                padding: "10px 20px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: "white",
                 border: "none",
-                borderRadius: 4,
+                borderRadius: 8,
                 cursor: "pointer",
+                fontWeight: 600,
+                fontSize: 14,
+                boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
+                transition: "all 0.3s ease",
               }}
             >
-              Preview Slides
+              👁️ Preview Slides
             </button>
           </div>
 
@@ -460,12 +569,13 @@ export default function App() {
           <div
             style={{
               flex: 1,
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 20,
+              border: "none",
+              borderRadius: 12,
+              padding: 32,
               position: "relative",
-              background: "#fafafa",
+              background: currentSlide.backgroundColor || "#ffffff",
               overflow: "auto",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
             }}
           >
             {/* Render texts */}
@@ -474,20 +584,24 @@ export default function App() {
                 key={t.id}
                 onClick={() => selectText(t.id)}
                 style={{
-                  padding: 6,
-                  marginBottom: 10,
+                  padding: 12,
+                  marginBottom: 12,
                   border:
                     t.id === selectedTextId
-                      ? "2px solid #0078d7"
-                      : "1px solid transparent",
+                      ? "3px solid #667eea"
+                      : "2px solid transparent",
                   cursor: "pointer",
                   fontWeight: t.style.bold ? "bold" : "normal",
                   fontStyle: t.style.italic ? "italic" : "normal",
                   textDecoration: t.style.underline ? "underline" : "none",
                   fontSize: t.style.fontSize,
-                  backgroundColor: t.id === selectedTextId ? "white" : "transparent",
+                  color: t.style.color || "#000000",
+                  backgroundColor: t.id === selectedTextId ? "rgba(102, 126, 234, 0.05)" : "transparent",
                   userSelect: "text",
                   whiteSpace: "pre-wrap",
+                  borderRadius: 8,
+                  transition: "all 0.2s ease",
+                  boxShadow: t.id === selectedTextId ? "0 4px 12px rgba(102, 126, 234, 0.15)" : "none",
                 }}
               >
                 {t.text}
@@ -505,6 +619,9 @@ export default function App() {
                   maxWidth: "100%",
                   maxHeight: 300,
                   overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                 }}
               >
                 {renderChart(currentSlide.chart, 600, 300)}
@@ -534,30 +651,76 @@ export default function App() {
           {selectedTextId && (
             <div
               style={{
-                marginTop: 12,
-                padding: 10,
-                borderTop: "1px solid #ddd",
+                marginTop: 16,
+                padding: 16,
+                borderTop: "2px solid #e2e8f0",
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 16,
+                background: "white",
+                borderRadius: 12,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               }}
             >
               <textarea
                 value={editingText}
                 onChange={updateTextField}
                 rows={3}
-                style={{ flex: 1, fontSize: fontSize, resize: "vertical" }}
+                className="styled-textarea"
+                style={{ 
+                  flex: 1, 
+                  fontSize: fontSize, 
+                  resize: "vertical",
+                  padding: 12,
+                  border: "2px solid #e2e8f0",
+                  borderRadius: 8,
+                  fontFamily: "inherit",
+                  outline: "none",
+                  transition: "border 0.2s ease",
+                }}
               />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <button onClick={toggleBold} style={{ fontWeight: bold ? "bold" : "normal" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <button onClick={toggleBold} style={{ 
+                  padding: "8px 12px",
+                  background: bold ? "#667eea" : "#e2e8f0",
+                  color: bold ? "white" : "#333",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  transition: "all 0.2s ease",
+                }}>
                   B
                 </button>
-                <button onClick={toggleItalic} style={{ fontStyle: italic ? "italic" : "normal" }}>
+                <button onClick={toggleItalic} style={{ 
+                  fontStyle: italic ? "italic" : "normal",
+                  padding: "8px 12px",
+                  background: italic ? "#667eea" : "#e2e8f0",
+                  color: italic ? "white" : "#333",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  transition: "all 0.2s ease",
+                }}>
                   I
                 </button>
                 <button
                   onClick={toggleUnderline}
-                  style={{ textDecoration: underline ? "underline" : "none" }}
+                  style={{ 
+                    textDecoration: underline ? "underline" : "none",
+                    padding: "8px 12px",
+                    background: underline ? "#667eea" : "#e2e8f0",
+                    color: underline ? "white" : "#333",
+                    border: "none",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    transition: "all 0.2s ease",
+                  }}
                 >
                   U
                 </button>
@@ -567,8 +730,29 @@ export default function App() {
                   min={8}
                   max={72}
                   onChange={updateFontSize}
-                  style={{ width: 50 }}
+                  style={{ 
+                    width: 60,
+                    padding: 8,
+                    border: "2px solid #e2e8f0",
+                    borderRadius: 6,
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: 600,
+                  }}
                   title="Font Size"
+                />
+                <input
+                  type="color"
+                  value={textColor}
+                  onChange={updateTextColor}
+                  style={{ 
+                    width: 60, 
+                    height: 36, 
+                    cursor: "pointer",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: 6,
+                  }}
+                  title="Text Color"
                 />
               </div>
             </div>
@@ -583,41 +767,43 @@ export default function App() {
                 left: "50%",
                 transform: "translateX(-50%)",
                 background: "white",
-                border: "1px solid #ccc",
-                padding: 20,
-                boxShadow: "0 0 15px rgba(0,0,0,0.3)",
+                border: "none",
+                padding: 28,
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
                 zIndex: 1000,
-                width: 320,
-                borderRadius: 8,
+                width: 380,
+                borderRadius: 16,
               }}
             >
-              <h3>Add {chartTypeToAdd.charAt(0).toUpperCase() + chartTypeToAdd.slice(1)} Chart</h3>
-              <label style={{ display: "block", marginBottom: 10 }}>
+              <h3 style={{ marginTop: 0, marginBottom: 20, color: "#2d3748", fontSize: 20, fontWeight: 700 }}>Add {chartTypeToAdd.charAt(0).toUpperCase() + chartTypeToAdd.slice(1)} Chart</h3>
+              <label style={{ display: "block", marginBottom: 16, fontSize: 14, fontWeight: 600, color: "#4a5568" }}>
                 Labels (comma separated):
                 <input
                   type="text"
                   value={chartLabelsInput}
                   onChange={(e) => setChartLabelsInput(e.target.value)}
-                  style={{ width: "100%", marginTop: 4 }}
+                  className="styled-input"
+                  style={{ width: "100%", marginTop: 8, padding: 12, border: "2px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", transition: "border 0.2s ease" }}
                   placeholder="e.g. A, B, C"
                 />
               </label>
-              <label style={{ display: "block", marginBottom: 10 }}>
+              <label style={{ display: "block", marginBottom: 20, fontSize: 14, fontWeight: 600, color: "#4a5568" }}>
                 Data (comma separated numbers):
                 <input
                   type="text"
                   value={chartDataInput}
                   onChange={(e) => setChartDataInput(e.target.value)}
-                  style={{ width: "100%", marginTop: 4 }}
+                  className="styled-input"
+                  style={{ width: "100%", marginTop: 8, padding: 12, border: "2px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", transition: "border 0.2s ease" }}
                   placeholder="e.g. 10, 20, 30"
                 />
               </label>
-              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-                <button onClick={saveChartData} style={{ flex: 1 }}>
-                  Save
+              <div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+                <button onClick={saveChartData} style={{ flex: 1, padding: "12px 20px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", color: "white", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 14, boxShadow: "0 4px 8px rgba(102, 126, 234, 0.3)", transition: "all 0.3s ease" }}>
+                  ✔️ Save
                 </button>
-                <button onClick={() => setChartFormVisible(false)} style={{ flex: 1 }}>
-                  Cancel
+                <button onClick={() => setChartFormVisible(false)} style={{ flex: 1, padding: "12px 20px", background: "#e2e8f0", color: "#4a5568", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 14, transition: "all 0.3s ease" }}>
+                  ❌ Cancel
                 </button>
               </div>
             </div>
@@ -634,48 +820,54 @@ export default function App() {
             left: 0,
             width: "100vw",
             height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.8)",
+            backgroundColor: "rgba(0,0,0,0.92)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 2000,
             flexDirection: "column",
             padding: 20,
+            backdropFilter: "blur(8px)",
           }}
         >
           <button
             onClick={() => setPreviewMode(false)}
             style={{
               position: "absolute",
-              top: 20,
-              right: 20,
-              background: "#d9534f",
+              top: 30,
+              right: 30,
+              background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
               border: "none",
               color: "white",
-              fontSize: 18,
-              padding: "10px 16px",
-              borderRadius: 6,
+              fontSize: 16,
+              fontWeight: 600,
+              padding: "12px 24px",
+              borderRadius: 10,
               cursor: "pointer",
               zIndex: 2100,
+              boxShadow: "0 4px 12px rgba(245, 87, 108, 0.4)",
+              transition: "all 0.3s ease",
             }}
           >
-            Close
+            ✖️ Close
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 30 }}>
             <button
               onClick={() =>
                 setPreviewIndex((i) => (i === 0 ? slides.length - 1 : i - 1))
               }
               style={{
-                fontSize: 28,
-                padding: "10px 16px",
+                fontSize: 32,
+                padding: "16px 20px",
                 cursor: "pointer",
-                background: "#0078d7",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: "white",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: 12,
                 userSelect: "none",
+                boxShadow: "0 6px 16px rgba(102, 126, 234, 0.4)",
+                transition: "all 0.3s ease",
               }}
             >
               ◀
@@ -688,21 +880,23 @@ export default function App() {
                 setPreviewIndex((i) => (i === slides.length - 1 ? 0 : i + 1))
               }
               style={{
-                fontSize: 28,
-                padding: "10px 16px",
+                fontSize: 32,
+                padding: "16px 20px",
                 cursor: "pointer",
-                background: "#0078d7",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                 color: "white",
                 border: "none",
-                borderRadius: 6,
+                borderRadius: 12,
                 userSelect: "none",
+                boxShadow: "0 6px 16px rgba(102, 126, 234, 0.4)",
+                transition: "all 0.3s ease",
               }}
             >
               ▶
             </button>
           </div>
 
-          <div style={{ color: "white", marginTop: 12, fontSize: 18 }}>
+          <div style={{ color: "white", marginTop: 20, fontSize: 20, fontWeight: 600, background: "rgba(255,255,255,0.1)", padding: "10px 24px", borderRadius: 10, backdropFilter: "blur(10px)" }}>
             Slide {previewIndex + 1} / {slides.length}
           </div>
         </div>
