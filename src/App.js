@@ -185,6 +185,8 @@ export default function App() {
           id: Date.now() + 1,
           text: "New Text",
           style: { bold: false, italic: false, underline: false, fontSize: 16, color: "#000000" },
+          position: { x: 50, y: 50 },
+          size: { width: 300, height: 100 },
         },
       ],
       images: [],
@@ -198,6 +200,8 @@ export default function App() {
 
   // Text editing state
   const [selectedTextId, setSelectedTextId] = useState(null);
+  const [hoveredShapeId, setHoveredShapeId] = useState(null);
+  const [hoveredChart, setHoveredChart] = useState(false);
   const [editingText, setEditingText] = useState("");
   const [bold, setBold] = useState(false);
   const [italic, setItalic] = useState(false);
@@ -233,6 +237,8 @@ export default function App() {
       id: Date.now() + idx,
       text: t.text,
       style: { ...t.style },
+      position: { x: 50, y: 50 + idx * 120 },
+      size: { width: 400, height: 100 },
     }));
     const newSlide = {
       id: Date.now(),
@@ -255,6 +261,8 @@ export default function App() {
       id: Date.now() + idx,
       text: t.text,
       style: { ...t.style },
+      position: { x: 50, y: 50 + idx * 120 },
+      size: { width: 400, height: 100 },
     }));
     const newSlides = [...slides];
     newSlides[currentIndex] = {
@@ -289,6 +297,8 @@ export default function App() {
       id: Date.now(),
       text: "New Text",
       style: { bold: false, italic: false, underline: false, fontSize: 16, color: "#000000" },
+      position: { x: 50, y: 50 },
+      size: { width: 300, height: 100 },
     };
     const newSlides = [...slides];
     newSlides[currentIndex].texts.push(newText);
@@ -417,7 +427,13 @@ export default function App() {
     }
 
     const newSlides = [...slides];
-    newSlides[currentIndex].chart = { type: chartTypeToAdd, labels, data };
+    newSlides[currentIndex].chart = { 
+      type: chartTypeToAdd, 
+      labels, 
+      data,
+      position: { x: 150, y: 150 },
+      size: { width: 400, height: 300 },
+    };
     setSlides(newSlides);
     setChartFormVisible(false);
   }
@@ -469,6 +485,7 @@ export default function App() {
       color: "#667eea",
       borderColor: "#4e5ba6",
       borderWidth: 2,
+      position: { x: 100, y: 100 },
     };
     const newSlides = [...slides];
     if (!newSlides[currentIndex].shapes) {
@@ -484,6 +501,110 @@ export default function App() {
     const newSlides = [...slides];
     newSlides[currentIndex].shapes = newSlides[currentIndex].shapes.filter(shape => shape.id !== shapeId);
     setSlides(newSlides);
+  }
+
+  // Drag handlers for text
+  function handleTextDragStart(e, textId) {
+    const textObj = currentSlide.texts.find(t => t.id === textId);
+    if (!textObj || !textObj.position) return;
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: 'text',
+      id: textId,
+      offsetX: e.clientX - textObj.position.x,
+      offsetY: e.clientY - textObj.position.y,
+    }));
+  }
+
+  // Drag handlers for shape
+  function handleShapeDragStart(e, shapeId) {
+    const shape = currentSlide.shapes.find(s => s.id === shapeId);
+    if (!shape || !shape.position) return;
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: 'shape',
+      id: shapeId,
+      offsetX: e.clientX - shape.position.x,
+      offsetY: e.clientY - shape.position.y,
+    }));
+  }
+
+  // Drag handlers for chart
+  function handleChartDragStart(e) {
+    if (!currentSlide.chart || !currentSlide.chart.position) return;
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: 'chart',
+      offsetX: e.clientX - currentSlide.chart.position.x,
+      offsetY: e.clientY - currentSlide.chart.position.y,
+    }));
+  }
+
+  // Handle drop on slide
+  function handleSlideDrop(e) {
+    e.preventDefault();
+    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const newSlides = [...slides];
+    const slideRect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - slideRect.left - data.offsetX;
+    const y = e.clientY - slideRect.top - data.offsetY;
+
+    if (data.type === 'text') {
+      const textObj = newSlides[currentIndex].texts.find(t => t.id === data.id);
+      if (textObj) {
+        textObj.position = { x: Math.max(0, x), y: Math.max(0, y) };
+      }
+    } else if (data.type === 'shape') {
+      const shape = newSlides[currentIndex].shapes.find(s => s.id === data.id);
+      if (shape) {
+        shape.position = { x: Math.max(0, x), y: Math.max(0, y) };
+      }
+    } else if (data.type === 'chart') {
+      if (newSlides[currentIndex].chart) {
+        newSlides[currentIndex].chart.position = { x: Math.max(0, x), y: Math.max(0, y) };
+      }
+    }
+
+    setSlides(newSlides);
+  }
+
+  function handleSlideDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  // Resize handlers
+  function handleTextResize(textId, newWidth, newHeight) {
+    const newSlides = [...slides];
+    const textObj = newSlides[currentIndex].texts.find(t => t.id === textId);
+    if (textObj) {
+      textObj.size = { width: Math.max(100, newWidth), height: Math.max(50, newHeight) };
+      setSlides(newSlides);
+    }
+  }
+
+  function handleShapeResize(shapeId, newWidth, newHeight) {
+    const newSlides = [...slides];
+    const shape = newSlides[currentIndex].shapes.find(s => s.id === shapeId);
+    if (shape) {
+      shape.width = Math.max(50, newWidth);
+      shape.height = Math.max(50, newHeight);
+      setSlides(newSlides);
+    }
+  }
+
+  function handleChartResize(newWidth, newHeight) {
+    const newSlides = [...slides];
+    if (newSlides[currentIndex].chart) {
+      newSlides[currentIndex].chart.size = { 
+        width: Math.max(200, newWidth), 
+        height: Math.max(150, newHeight) 
+      };
+      setSlides(newSlides);
+    }
   }
 
   // Render shape
@@ -908,13 +1029,14 @@ export default function App() {
                   ))}
                 </div>
                 {slide.chart && (
-                  <div style={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div className="sidebar-chart-container" style={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "center" }}>
                     {renderChart(slide.chart, 150, 80)}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (window.confirm("Remove chart from this slide?")) removeChart(i);
                       }}
+                      className="remove-btn"
                       style={{
                         marginTop: 4,
                         fontSize: 12,
@@ -1108,6 +1230,8 @@ export default function App() {
 
           {/* Slide editing area */}
           <div
+            onDrop={handleSlideDrop}
+            onDragOver={handleSlideDragOver}
             style={{
               flex: 1,
               border: "none",
@@ -1120,109 +1244,189 @@ export default function App() {
             }}
           >
             {/* Render texts */}
-            {currentSlide.texts.map((t) => (
-              <div
-                key={t.id}
-                style={{
-                  position: "relative",
-                  marginBottom: 12,
-                }}
-              >
+            {currentSlide.texts.map((t) => {
+              const pos = t.position || { x: 0, y: 0 };
+              const size = t.size || { width: 300, height: 100 };
+              return (
                 <div
+                  key={t.id}
+                  draggable
+                  onDragStart={(e) => handleTextDragStart(e, t.id)}
                   onClick={() => selectText(t.id)}
                   style={{
+                    position: "absolute",
+                    left: pos.x,
+                    top: pos.y,
+                    width: size.width,
+                    height: size.height,
                     padding: 12,
-                    border:
-                      t.id === selectedTextId
-                        ? "3px solid #667eea"
-                        : "2px solid transparent",
-                    cursor: "pointer",
+                    border: t.id === selectedTextId ? "3px solid #667eea" : "2px solid transparent",
+                    cursor: "move",
                     fontWeight: t.style.bold ? "bold" : "normal",
                     fontStyle: t.style.italic ? "italic" : "normal",
                     textDecoration: t.style.underline ? "underline" : "none",
                     fontSize: t.style.fontSize,
                     color: t.style.color || "#000000",
-                    backgroundColor: t.id === selectedTextId ? "rgba(102, 126, 234, 0.05)" : "transparent",
-                    userSelect: "text",
+                    backgroundColor: t.id === selectedTextId ? "rgba(102, 126, 234, 0.05)" : "rgba(255,255,255,0.8)",
                     whiteSpace: "pre-wrap",
                     borderRadius: 8,
-                    transition: "all 0.2s ease",
-                    boxShadow: t.id === selectedTextId ? "0 4px 12px rgba(102, 126, 234, 0.15)" : "none",
+                    transition: "border 0.2s ease",
+                    boxShadow: t.id === selectedTextId ? "0 4px 12px rgba(102, 126, 234, 0.15)" : "0 2px 4px rgba(0,0,0,0.1)",
+                    overflow: "auto",
                   }}
                 >
                   {t.text}
+                  {t.id === selectedTextId && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm("Delete this text box?")) {
+                            deleteText(t.id);
+                          }
+                        }}
+                        style={{
+                          position: "absolute",
+                          top: 8,
+                          right: 8,
+                          padding: "4px 10px",
+                          background: "#dc3545",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          fontSize: 11,
+                          fontWeight: 600,
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                          zIndex: 10,
+                        }}
+                      >
+                        ✕ Delete
+                      </button>
+                      <div
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          const startX = e.clientX;
+                          const startY = e.clientY;
+                          const startWidth = size.width;
+                          const startHeight = size.height;
+                          
+                          const handleMouseMove = (e) => {
+                            const newWidth = startWidth + (e.clientX - startX);
+                            const newHeight = startHeight + (e.clientY - startY);
+                            handleTextResize(t.id, newWidth, newHeight);
+                          };
+                          
+                          const handleMouseUp = () => {
+                            document.removeEventListener('mousemove', handleMouseMove);
+                            document.removeEventListener('mouseup', handleMouseUp);
+                          };
+                          
+                          document.addEventListener('mousemove', handleMouseMove);
+                          document.addEventListener('mouseup', handleMouseUp);
+                        }}
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          right: 0,
+                          width: 12,
+                          height: 12,
+                          background: "#667eea",
+                          cursor: "nwse-resize",
+                          borderRadius: "0 0 4px 0",
+                        }}
+                      />
+                    </>
+                  )}
                 </div>
-                {t.id === selectedTextId && (
+              );
+            })}
+
+            {/* Render shapes */}
+            {currentSlide.shapes && currentSlide.shapes.map((shape) => {
+              const pos = shape.position || { x: 0, y: 0 };
+              const isHovered = hoveredShapeId === shape.id;
+              return (
+                <div
+                  key={shape.id}
+                  draggable
+                  onDragStart={(e) => handleShapeDragStart(e, shape.id)}
+                  onMouseEnter={() => setHoveredShapeId(shape.id)}
+                  onMouseLeave={() => setHoveredShapeId(null)}
+                  className="shape-container"
+                  style={{
+                    position: "absolute",
+                    left: pos.x,
+                    top: pos.y,
+                    border: "2px solid #e2e8f0",
+                    borderRadius: 8,
+                    padding: 8,
+                    background: "white",
+                    cursor: "move",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  }}
+                >
+                  {renderShape(shape)}
                   <button
-                    onClick={() => {
-                      if (window.confirm("Delete this text box?")) {
-                        deleteText(t.id);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("Remove this shape?")) {
+                        removeShape(shape.id);
                       }
                     }}
+                    className="remove-btn"
                     style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      padding: "4px 10px",
+                      marginTop: 8,
+                      padding: "6px 12px",
                       background: "#dc3545",
                       color: "white",
                       border: "none",
                       borderRadius: 4,
                       cursor: "pointer",
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 600,
-                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                      zIndex: 10,
                     }}
                   >
-                    ✕ Delete
+                    Remove Shape
                   </button>
-                )}
-              </div>
-            ))}
-
-            {/* Render shapes */}
-            {currentSlide.shapes && currentSlide.shapes.length > 0 && (
-              <div style={{ marginTop: 20, display: "flex", flexWrap: "wrap", gap: 12 }}>
-                {currentSlide.shapes.map((shape) => (
-                  <div
-                    key={shape.id}
-                    style={{
-                      position: "relative",
-                      border: "2px solid #e2e8f0",
-                      borderRadius: 8,
-                      padding: 8,
-                      background: "white",
-                      display: "inline-flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                    }}
-                  >
-                    {renderShape(shape)}
-                    <button
-                      onClick={() => {
-                        if (window.confirm("Remove this shape?")) {
-                          removeShape(shape.id);
-                        }
+                  {isHovered && (
+                    <div
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        const startX = e.clientX;
+                        const startY = e.clientY;
+                        const startWidth = shape.width;
+                        const startHeight = shape.height;
+                        
+                        const handleMouseMove = (e) => {
+                          const newWidth = startWidth + (e.clientX - startX);
+                          const newHeight = startHeight + (e.clientY - startY);
+                          handleShapeResize(shape.id, newWidth, newHeight);
+                        };
+                        
+                        const handleMouseUp = () => {
+                          document.removeEventListener('mousemove', handleMouseMove);
+                          document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
                       }}
                       style={{
-                        marginTop: 8,
-                        padding: "6px 12px",
-                        background: "#dc3545",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                        fontSize: 12,
-                        fontWeight: 600,
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        width: 12,
+                        height: 12,
+                        background: "#667eea",
+                        cursor: "nwse-resize",
+                        borderRadius: "0 0 4px 0",
                       }}
-                    >
-                      Remove Shape
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+                    />
+                  )}
+                </div>
+              );
+            })}
 
             {/* Render images */}
             {currentSlide.images && currentSlide.images.length > 0 && (
@@ -1275,42 +1479,89 @@ export default function App() {
             )}
 
             {/* Render chart */}
-            {currentSlide.chart && (
-              <div
-                style={{
-                  marginTop: 20,
-                  border: "1px solid #ddd",
-                  padding: 10,
-                  background: "white",
-                  maxWidth: "100%",
-                  maxHeight: 300,
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                {renderChart(currentSlide.chart, 600, 300)}
-                <button
-                  onClick={() => {
-                    if (window.confirm("Remove chart from this slide?")) {
-                      removeChart();
-                    }
-                  }}
+            {currentSlide.chart && (() => {
+              const pos = currentSlide.chart.position || { x: 0, y: 0 };
+              const size = currentSlide.chart.size || { width: 400, height: 300 };
+              return (
+                <div
+                  draggable
+                  onDragStart={handleChartDragStart}
+                  onMouseEnter={() => setHoveredChart(true)}
+                  onMouseLeave={() => setHoveredChart(false)}
+                  className="chart-container"
                   style={{
-                    marginTop: 8,
-                    padding: "4px 8px",
-                    background: "#dc3545",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 4,
-                    cursor: "pointer",
+                    position: "absolute",
+                    left: pos.x,
+                    top: pos.y,
+                    width: size.width,
+                    height: size.height,
+                    border: "2px solid #ddd",
+                    padding: 10,
+                    background: "white",
+                    cursor: "move",
+                    borderRadius: 8,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                   }}
                 >
-                  Remove Chart
-                </button>
-              </div>
-            )}
+                  {renderChart(currentSlide.chart, size.width - 20, size.height - 60)}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (window.confirm("Remove chart from this slide?")) {
+                        removeChart();
+                      }
+                    }}
+                    className="remove-btn"
+                    style={{
+                      marginTop: 8,
+                      padding: "4px 8px",
+                      background: "#dc3545",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 4,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Remove Chart
+                  </button>
+                  {hoveredChart && (
+                    <div
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        const startX = e.clientX;
+                        const startY = e.clientY;
+                        const startWidth = size.width;
+                        const startHeight = size.height;
+                        
+                        const handleMouseMove = (e) => {
+                          const newWidth = startWidth + (e.clientX - startX);
+                          const newHeight = startHeight + (e.clientY - startY);
+                          handleChartResize(newWidth, newHeight);
+                        };
+                        
+                        const handleMouseUp = () => {
+                          document.removeEventListener('mousemove', handleMouseMove);
+                          document.removeEventListener('mouseup', handleMouseUp);
+                        };
+                        
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
+                      }}
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: 0,
+                        width: 12,
+                        height: 12,
+                        background: "#667eea",
+                        cursor: "nwse-resize",
+                        borderRadius: "0 0 4px 0",
+                      }}
+                    />
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* Text editing controls */}
