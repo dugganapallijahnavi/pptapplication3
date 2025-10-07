@@ -24,3 +24,72 @@
 * {
   box-sizing: border-box;
 }
+
+/* Hover effect for chart and shape remove buttons */
+.chart-container {
+  position: relative;
+}
+
+.chart-container .remove-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.chart-container:hover .remove-btn {
+  opacity: 1;
+}
+
+.shape-container {
+  position: relative;
+}
+
+.shape-container .remove-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.shape-container:hover .remove-btn {
+  opacity: 1;
+}
+
+/* Sidebar chart container hover effect */
+.sidebar-chart-container {
+  position: relative;
+}
+
+.sidebar-chart-container .remove-btn {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-chart-container:hover .remove-btn {
+  opacity: 1;
+}
+
+/* Resize handle styling */
+.resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: #667eea;
+  cursor: nwse-resize;
+  border-radius: 0 0 4px 0;
+  transition: all 0.2s ease;
+}
+
+.resize-handle:hover {
+  width: 16px;
+  height: 16px;
+  background: #5568d3;
+}
+
+/* Draggable element styling */
+[draggable="true"] {
+  user-select: none;
+}
+
+[draggable="true"]:active {
+  opacity: 0.8;
+}
